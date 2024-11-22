@@ -219,7 +219,7 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 ---
-### Delete User
+### 5A. Delete User
 - **Endpoint:** `/user/delete`  
 - **Method:** `DELETE`  
 - **Description:**  
