@@ -65,53 +65,74 @@ This system is a web API application built with the Slim Framework and uses JWT 
 ---
 ## API Endpoints
 
-### a1. User Authentication
-  - **Endpoint:** `/user/authenticate`  
-  - **Method:** `POST`  
-  - **Description:** 
-      Authenticates a user by verifying the provided username and password against the `users` table in the database. If the credentials are valid, a JWT token is generated and returned to the user.
-  - **Sample Request(JSON):**
-      ```json
-          {
-            "username": "user123",
-            "password": "mypassword"
-          }
-      ```
-  - **Response:**
-      - **On Success**
-          ```json
-              {
-                  "status": "success",
-                  "token": "<JWT_TOKEN>",
-                  "data": null
-              }
-          ```
-      - **On Failure (Authenthication Failed):**
-          ```json
-              {
-                  "status": "fail",
-                  "data": {
-                      "title": "Authentication Failed!"
-                  }
-              }
-          ```
----
-### a2. Register a New User
-- **Endpoint:** `/user/register`  
+### 1a. User Authentication or Login
+- **Endpoint:** `/user/authenticate`  
 - **Method:** `POST`  
 - **Description:**  
-  This API endpoint allows users to register by providing a `username` and `password`. The system validates the input, ensuring that the username is unique and that both the username and password meet the minimum length requirement of 5 characters. The credentials are securely stored in the database with the password hashed using SHA-256.
+  This API endpoint allows users to authenticate by providing their username and password. Upon successful authentication, a JWT token is generated and returned.
 
-- **Sample Request (JSON):**
+- **Authentication:**  
+  No authentication is required to access this endpoint. However, the endpoint will provide a JWT token if the authentication is successful.
+
+- **Request Body (JSON):**
     ```json
     {
-        "username": "example_user",
-        "password": "mypassword"
+        "username": "<Username>",
+        "password": "<Password>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Authentication Successful):**
+        ```json
+        {
+            "status": "success",
+            "token": "<JWT_Token>",
+            "data": null
+        }
+        ```
+
+    - **On Failure (Authentication Failed):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "Authentication Failed!"
+            }
+        }
+        ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
+---
+
+### 2a. Create New User
+- **Endpoint:** `/user/register`  
+- **Method:** `POST`  
+- **Description:**  
+  This API endpoint allows the creation of a new user by providing a username and password. The username and password must be at least 5 characters long.
+
+- **Authentication:**  
+  No authentication is required to access this endpoint.
+
+- **Request Body (JSON):**
+    ```json
+    {
+        "username": "<Username>",
+        "password": "<Password>"
+    }
+    ```
+
+- **Response:**
+    - **On Success (User Created):**
         ```json
         {
             "status": "success",
@@ -119,7 +140,7 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (Invalid Input):**
+    - **On Failure (Validation Error):**
         ```json
         {
             "status": "fail",
@@ -127,44 +148,50 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (Username Already Exists):**
+    - **On Failure (Username Exists):**
         ```json
         {
             "status": "fail",
             "data": "Username already exists"
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### a3. View All Users
+
+### 3a. View User
 - **Endpoint:** `/user/read`  
 - **Method:** `GET`  
 - **Description:**  
-  This API endpoint retrieves a list of all users from the system, displaying their `userid` and `username`. This operation is protected by a JWT token and only accessible to authenticated users. The server returns a new JWT token upon successful request, which can be used for subsequent API requests.
+  This API endpoint retrieves a list of users from the database. The request must be authenticated with a valid JWT token.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
 
-- **Sample Request:**
-    - **Headers:**
-      ```json
-
-      ```
+- **Request Body:**  
+  No request body is needed for this endpoint.
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Users Retrieved):**
         ```json
         {
             "status": "success",
             "token": "<New_JWT_Token>",
             "data": [
                 {
-                    "userid": 1,
-                    "username": "user1"
+                    "userid": "<User_ID>",
+                    "username": "<Username>"
                 },
-                {
-                    "userid": 2,
-                    "username": "user2"
-                }
+                ...
             ]
         }
         ```
@@ -176,12 +203,23 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "No users found"
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### a4. Update User
+### 4a. Update a User
 - **Endpoint:** `/user/update`  
 - **Method:** `PUT`  
 - **Description:**  
-  This API endpoint allows a user to update their `username` and `password`. The request payload should contain the user's ID, new username, and new password. The operation is protected by a JWT token, which will be rotated and returned upon successful request.
+  This API endpoint allows updating a user's details by providing the user ID, new username, and new password. The username and password must be at least 5 characters long. The request must be authenticated with a valid JWT token.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -189,27 +227,19 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "userid": "user_id",
-        "username": "new_username",
-        "password": "new_password"
+        "userid": "<User_ID>",
+        "username": "<New_Username>",
+        "password": "<New_Password>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (User Updated):**
         ```json
         {
             "status": "success",
             "token": "<New_JWT_Token>",
             "data": "User updated successfully"
-        }
-        ```
-
-    - **On Failure (User Does Not Exist):**
-        ```json
-        {
-            "status": "fail",
-            "data": "User with ID <user_id> does not exist."
         }
         ```
 
@@ -220,12 +250,32 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "Username and password must be at least 5 characters long and not empty"
         }
         ```
+
+    - **On Failure (User Does Not Exist):**
+        ```json
+        {
+            "status": "fail",
+            "data": "User with ID <User_ID> does not exist."
+        }
+        ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### a5. Delete User
+
+### 5a. Delete a User
 - **Endpoint:** `/user/delete`  
 - **Method:** `DELETE`  
 - **Description:**  
-  This API endpoint allows an administrator or a valid user to delete their account from the system. The request payload must include the `userid` of the user to be deleted. The operation is protected by a JWT token, which will be rotated and returned upon successful request.
+  This API endpoint allows the deletion of a user by providing the user ID. The request must be authenticated with a valid JWT token.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -233,12 +283,12 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "userid": "user_id"
+        "userid": "<User_ID>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (User Deleted):**
         ```json
         {
             "status": "success",
@@ -247,27 +297,39 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (User Does Not Exist):**
-        ```json
-        {
-            "status": "fail",
-            "data": "User with ID <user_id> does not exist."
-        }
-        ```
-
-    - **On Failure (Validation Error):**
+    - **On Failure (User ID Not Provided):**
         ```json
         {
             "status": "fail",
             "data": "User ID must be provided."
         }
         ```
+
+    - **On Failure (User Does Not Exist):**
+        ```json
+        {
+            "status": "fail",
+            "data": "User with ID <User_ID> does not exist."
+        }
+        ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### b1. Create a New Author
+
+### 1b. Create a New Author
 - **Endpoint:** `/authors/create`  
 - **Method:** `POST`  
 - **Description:**  
-  This API endpoint allows the creation of a new author in the system. The request payload must include the `name` of the author. The author name must be at least 5 characters long. The operation is protected by a JWT token, which will be rotated and returned upon successful request.
+  This API endpoint allows creating a new author by providing the author's name. The name must be more than 4 characters long.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -275,12 +337,12 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "name": "author_name"
+        "name": "<Author_Name>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Author Created):**
         ```json
         {
             "status": "success",
@@ -296,12 +358,24 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "Author name must be more than 4 characters and cannot be blank."
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### b2. Update Author Information
+
+### 2b. Update Author Information
 - **Endpoint:** `/authors/update`  
 - **Method:** `PUT`  
 - **Description:**  
-  This API endpoint allows updating the information of an existing author. The request payload must include the `authorid` (the ID of the author to be updated) and the new `name` of the author. The name must be at least 5 characters long. The operation is protected by a JWT token, which will be rotated and returned upon a successful request.
+  This API endpoint allows updating an author's information by providing the author ID and new name. The name must be more than 4 characters long. 
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -309,13 +383,13 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "authorid": "author_id",
-        "name": "new_author_name"
+        "authorid": "<Author_ID>",
+        "name": "<New_Name>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Author Updated):**
         ```json
         {
             "status": "success",
@@ -332,42 +406,48 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (Author Not Found):**
+    - **On Failure (Author Does Not Exist):**
         ```json
         {
             "status": "fail",
-            "data": "Author with ID <author_id> does not exist."
+            "data": "Author with ID <Author_ID> does not exist."
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### b3. Get All Authors
+
+### 3b. Get All Authors
 - **Endpoint:** `/authors/read`  
 - **Method:** `GET`  
 - **Description:**  
-  This API endpoint retrieves a list of all authors from the database, including their `authorid` and `name`. The operation is protected by a JWT token, and the response will include a new token as well as the list of authors.
+  This API endpoint retrieves a list of all authors from the database.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
 
-- **Request Body (JSON):**
-    ```json
-
-    ```
+- **Request Body:**  
+  No request body is needed for this endpoint.
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Authors Retrieved):**
         ```json
         {
             "status": "success",
             "token": "<New_JWT_Token>",
             "data": [
                 {
-                    "authorid": 1,
-                    "name": "Author Name 1"
-                },
-                {
-                    "authorid": 2,
-                    "name": "Author Name 2"
+                    "authorid": "<Author_ID>",
+                    "name": "<Author_Name>"
                 },
                 ...
             ]
@@ -381,12 +461,24 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "No authors found"
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### b4. Delete an Author
+
+### 4b. Delete an Author
 - **Endpoint:** `/authors/delete`  
 - **Method:** `DELETE`  
 - **Description:**  
-  This API endpoint allows for the deletion of an author from the database. The request requires the `authorid` of the author to be deleted. The operation is protected by a JWT token, and the response will include a new token as well as a confirmation message.
+  This API endpoint allows the deletion of an author by providing the author ID.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -394,12 +486,12 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-      "authorid": 1
+        "authorid": "<Author_ID>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Author Deleted):**
         ```json
         {
             "status": "success",
@@ -408,7 +500,7 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (No Author ID Provided):**
+    - **On Failure (Author ID Not Provided):**
         ```json
         {
             "status": "fail",
@@ -420,15 +512,28 @@ This system is a web API application built with the Slim Framework and uses JWT 
         ```json
         {
             "status": "fail",
-            "data": "Author with ID <authorId> does not exist."
+            "data": "Author with ID <Author_ID> does not exist."
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### c1. Create a New Book
+
+
+### 1c. Create a New Book
 - **Endpoint:** `/books/create`  
 - **Method:** `POST`  
 - **Description:**  
-  This API endpoint allows for creating a new book record in the database. The request requires the `title` of the book and the `authorid` (the ID of the author) to associate the book with. The operation is protected by a JWT token, and the response will include a new token as well as a confirmation message.
+  This API endpoint allows creating a new book by providing the book's title and author ID. The title must be more than 4 characters long.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -436,13 +541,13 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "title": "The Great Gatsby",
-        "authorid": 1
+        "title": "<Book_Title>",
+        "authorid": "<Author_ID>"
     }
     ```
 
 - **Response:**
-    - **On Success:**
+    - **On Success (Book Created):**
         ```json
         {
             "status": "success",
@@ -451,7 +556,7 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (Book Title Invalid):**
+    - **On Failure (Validation Error):**
         ```json
         {
             "status": "fail",
@@ -466,21 +571,30 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "Author not found"
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### c2. Get All Books
+
+### 2c. Get All Books
 - **Endpoint:** `/books/read`  
 - **Method:** `GET`  
 - **Description:**  
-  This API endpoint retrieves a list of all books from the database, along with the name of their respective authors. It is protected by JWT token authentication and will return a token upon successful request.
+  This API endpoint retrieves a list of all books from the database along with their authors.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
 
-- **Request:**
-    - **Headers:**
-      ```json
-
-      ```
+- **Request Body:**  
+  No request body is needed for this endpoint.
 
 - **Response:**
     - **On Success (Books Retrieved):**
@@ -490,16 +604,10 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "token": "<New_JWT_Token>",
             "data": [
                 {
-                    "bookid": 1,
-                    "title": "To Kill a Mockingbird",
-                    "authorid": 1,
-                    "author_name": "Harper Lee"
-                },
-                {
-                    "bookid": 2,
-                    "title": "1984",
-                    "authorid": 2,
-                    "author_name": "George Orwell"
+                    "bookid": "<Book_ID>",
+                    "title": "<Book_Title>",
+                    "authorid": "<Author_ID>",
+                    "author_name": "<Author_Name>"
                 },
                 ...
             ]
@@ -513,12 +621,24 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "No books found"
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### c3. Delete a Book
-- **Endpoint:** `/books/delete`  
-- **Method:** `DELETE`  
+
+### 3c. Update Book Information
+- **Endpoint:** `/books/update`  
+- **Method:** `PUT`  
 - **Description:**  
-  This API endpoint allows you to delete a specific book from the database using its unique book ID. The request must be authenticated with a valid JWT token.
+  This API endpoint allows updating a book's information by providing the book ID, new title, and new author ID. The title must be more than 4 characters long.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -526,7 +646,71 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "bookid": <Book_ID>
+        "bookid": "<Book_ID>",
+        "title": "<New_Title>",
+        "authorid": "<New_Author_ID>"
+    }
+    ```
+
+- **Response:**
+    - **On Success (Book Updated):**
+        ```json
+        {
+            "status": "success",
+            "token": "<New_JWT_Token>",
+            "data": "Book updated successfully"
+        }
+        ```
+
+    - **On Failure (Validation Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": "Book title must be more than 4 characters and cannot be blank."
+        }
+        ```
+
+    - **On Failure (Book Does Not Exist):**
+        ```json
+        {
+            "status": "fail",
+            "data": "Book with ID <Book_ID> does not exist."
+        }
+        ```
+
+    - **On Failure (Author Not Found):**
+        ```json
+        {
+            "status": "fail",
+            "data": "Author not found"
+        }
+        ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
+---
+
+### 4c. Delete a Book
+- **Endpoint:** `/books/delete`  
+- **Method:** `DELETE`  
+- **Description:**  
+  This API endpoint allows the deletion of a book by providing the book ID.
+
+- **Authentication:**  
+  This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
+
+- **Request Body (JSON):**
+    ```json
+    {
+        "bookid": "<Book_ID>"
     }
     ```
 
@@ -547,12 +731,28 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "data": "Book with ID <Book_ID> does not exist."
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### e1. Create a New Book-Author Relationship
+
+
+
+
+
+### Create a New Book-Author Relationship
 - **Endpoint:** `/book_authors/create`  
 - **Method:** `POST`  
 - **Description:**  
-  This API endpoint allows the creation of a new book-author relationship. The request requires a `bookid` and an `authorid`, which link a book to an author in the system. It is protected by a JWT token, which will be rotated and returned upon successful request.
+  This API endpoint allows creating a new relationship between a book and an author by providing the book ID and author ID.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
@@ -560,13 +760,13 @@ This system is a web API application built with the Slim Framework and uses JWT 
 - **Request Body (JSON):**
     ```json
     {
-        "bookid": "book_id",
-        "authorid": "author_id"
+        "bookid": "<Book_ID>",
+        "authorid": "<Author_ID>"
     }
     ```
 
 - **Response:**
-    - **On Success (Book-Author Relationship Created):**
+    - **On Success (Relationship Created):**
         ```json
         {
             "status": "success",
@@ -591,84 +791,89 @@ This system is a web API application built with the Slim Framework and uses JWT 
         }
         ```
 
-    - **On Failure (Foreign Key Constraint Violation):**
+    - **On Failure (Server Error):**
         ```json
         {
             "status": "fail",
             "data": {
-                "title": "Foreign key constraint violation",
-                "details": "Error message from the database"
+                "title": "<Error_Message>"
             }
         }
         ```
+
 ---
-### e2. Get All Book-Author Relationships
+
+### Get All Book-Author Relationships
 - **Endpoint:** `/book_authors/read`  
 - **Method:** `GET`  
 - **Description:**  
-  This API endpoint fetches all book-author relationships from the database, including details about the books and authors associated with each relationship. It returns a list of these relationships along with the book title and author name.
+  This API endpoint retrieves a list of all book-author relationships from the database, including details of the books and authors.
 
 - **Authentication:**  
   This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
 
-- **Request Body (JSON):**
-    ```json
- 
-    ```
+- **Request Body:**  
+  No request body is needed for this endpoint.
 
 - **Response:**
-    - **On Success (Book-Author Relationships Found):**
+    - **On Success (Relationships Retrieved):**
         ```json
         {
             "status": "success",
             "token": "<New_JWT_Token>",
             "data": [
                 {
-                    "collectionid": "1",
-                    "bookid": "1",
-                    "authorid": "2",
-                    "book_title": "Book Title",
-                    "author_name": "Author Name"
+                    "collectionid": "<Collection_ID>",
+                    "bookid": "<Book_ID>",
+                    "authorid": "<Author_ID>",
+                    "book_title": "<Book_Title>",
+                    "author_name": "<Author_Name>"
                 },
-                {
-                    "collectionid": "2",
-                    "bookid": "3",
-                    "authorid": "1",
-                    "book_title": "Another Book",
-                    "author_name": "Another Author"
-                }
+                ...
             ]
         }
         ```
 
-    - **On Failure (No Book-Author Relationships Found):**
+    - **On Failure (No Relationships Found):**
         ```json
         {
             "status": "fail",
             "data": "No book-author relationships found"
         }
         ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
 ---
-### e3. Update Book-Author Relationship
+
+### Update Book-Author Relationship
 - **Endpoint:** `/book_authors/update`  
 - **Method:** `PUT`  
 - **Description:**  
-  This API endpoint allows you to update the relationship between a book and an author in the `book_authors` table. The request requires the `collectionid`, `bookid`, and `authorid` in the request body. The relationship between the specified book and author will be updated for the given `collectionid`.
+  This API endpoint allows updating an existing book-author relationship by providing the collection ID, new book ID, and new author ID.
 
 - **Authentication:**  
-  This endpoint requires a valid JWT token for access. The token must be passed in the `Authorization` header as a Bearer token.
+  This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
 
 - **Request Body (JSON):**
     ```json
     {
-        "collectionid": "collection_id",
-        "bookid": "book_id",
-        "authorid": "author_id"
+        "collectionid": "<Collection_ID>",
+        "bookid": "<New_Book_ID>",
+        "authorid": "<New_Author_ID>"
     }
     ```
 
 - **Response:**
-    - **On Success (Book-Author Relationship Updated):**
+    - **On Success (Relationship Updated):**
         ```json
         {
             "status": "success",
@@ -699,38 +904,12 @@ This system is a web API application built with the Slim Framework and uses JWT 
             "status": "fail",
             "data": {
                 "title": "Foreign key constraint violation",
-                "details": "<Error_Message>"
+                "details": "<Error_Details>"
             }
         }
         ```
----
-### e4. Delete Book-Author Relationship
-- **Endpoint:** `/book_authors/delete`  
-- **Method:** `DELETE`  
-- **Description:**  
-  This API endpoint allows you to delete an existing relationship between a book and an author in the `book_authors` table. The relationship to be deleted is identified by the `collectionid`. Once deleted, the specified book-author relationship will be removed from the database.
 
-- **Authentication:**  
-  This endpoint requires a valid JWT token for access. The token must be passed in the `Authorization` header as a Bearer token.
-
-- **Request Body (JSON):**
-    ```json
-    {
-        "collectionid": "collection_id"
-    }
-    ```
-
-- **Response:**
-    - **On Success (Book-Author Relationship Deleted):**
-        ```json
-        {
-            "status": "success",
-            "token": "<New_JWT_Token>",
-            "data": "Book-author relationship deleted successfully"
-        }
-        ```
-
-    - **On Failure (Database Error):**
+    - **On Failure (Server Error):**
         ```json
         {
             "status": "fail",
@@ -739,4 +918,44 @@ This system is a web API application built with the Slim Framework and uses JWT 
             }
         }
         ```
+
 ---
+
+### Delete a Book-Author Relationship
+- **Endpoint:** `/book_authors/delete`  
+- **Method:** `DELETE`  
+- **Description:**  
+  This API endpoint allows deleting an existing book-author relationship by providing the collection ID.
+
+- **Authentication:**  
+  This endpoint requires a valid JWT token for access. The JWT token must be passed in the `Authorization` header as a Bearer token.
+
+- **Request Body (JSON):**
+    ```json
+    {
+        "collectionid": "<Collection_ID>"
+    }
+    ```
+
+- **Response:**
+    - **On Success (Relationship Deleted):**
+        ```json
+        {
+            "status": "success",
+            "token": "<New_JWT_Token>",
+            "data": "Book-author relationship deleted successfully"
+        }
+        ```
+
+    - **On Failure (Server Error):**
+        ```json
+        {
+            "status": "fail",
+            "data": {
+                "title": "<Error_Message>"
+            }
+        }
+        ```
+
+---
+
